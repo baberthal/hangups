@@ -12,18 +12,29 @@ import logging
 import re
 import subprocess
 import sys
+from shutil import which
 
 import hangups
 from hangups.ui.utils import get_conv_name
 
 logger = logging.getLogger(__name__)
 if sys.platform == 'darwin':
-    NOTIFY_CMD = [
-        'osascript', '-e',
-        ('display notification "{msg_text}" with '
-         'title "{convo_name}" '
-         'subtitle "{sender_name}"'),
-    ]
+    if len(which('terminal-notifier')) > 0:
+        NOTIFY_CMD = [
+                'terminal-notifier',
+                ('-message "{msg_text}" '
+                    '-title "{convo_name}" '
+                    '-subtitle "{sender_name}" '
+                    '-appIcon "Hangouts_Icon.png"'),
+                ]
+    else:
+        NOTIFY_CMD = [
+                'osascript', '-e',
+                ('display notification "{msg_text}" with '
+                    'title "{convo_name}" '
+                    'subtitle "{sender_name}"'),
+                ]
+
     NOTIFY_ESCAPER = lambda s: s.replace('"', '\\"')
 else:
     NOTIFY_CMD = [

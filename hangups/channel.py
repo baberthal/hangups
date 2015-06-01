@@ -179,7 +179,7 @@ class Channel(object):
         error.
         """
         MAX_RETRIES = 5  # maximum number of times to retry after a failure
-        retries = MAX_RETRIES # number of remaining retries
+        retries = MAX_RETRIES  # number of remaining retries
         need_new_sid = True  # whether a new SID is needed
 
         while retries >= 0:
@@ -305,7 +305,7 @@ class Channel(object):
             'VER': 8,
             'gsessionid': self._gsessionid_param,
             'RID': 'rpc',
-            't': 1, # trial
+            't': 1,  # trial
             'SID': self._sid_param,
             'CI': 0,
             'ctype': 'hangouts',  # client type
@@ -321,8 +321,11 @@ class Channel(object):
             ), CONNECT_TIMEOUT)
         except asyncio.TimeoutError:
             raise exceptions.NetworkError('Request timed out')
-        except aiohttp.errors.ClientError as e:
+        except aiohttp.ClientError as e:
             raise exceptions.NetworkError('Request connection error: {}'
+                                          .format(e))
+        except aiohttp.ServerDisconnectedError as e:
+            raise exceptions.NetworkError('Server disconnected error: {}'
                                           .format(e))
         if res.status == 400 and res.reason == 'Unknown SID':
             raise UnknownSIDError('SID became invalid')
@@ -338,8 +341,11 @@ class Channel(object):
                 )
             except asyncio.TimeoutError:
                 raise exceptions.NetworkError('Request timed out')
-            except aiohttp.errors.ClientError as e:
+            except aiohttp.ClientError as e:
                 raise exceptions.NetworkError('Request connection error: {}'
+                                              .format(e))
+            except aiohttp.ServerDisconnectedError as e:
+                raise exceptions.NetworkError('Server disconnected error: {}'
                                               .format(e))
             except asyncio.CancelledError:
                 # Prevent ResourceWarning when channel is disconnected.

@@ -37,8 +37,10 @@ def fetch(method, url, params=None, headers=None, cookies=None, data=None,
             body = yield from asyncio.wait_for(res.read(), REQUEST_TIMEOUT)
         except asyncio.TimeoutError:
             error_msg = 'Request timed out'
-        except aiohttp.errors.ClientError as e:
+        except aiohttp.ClientError as e:
             error_msg = 'Request connection error: {}'.format(e)
+        except aiohttp.ServerDisconnectedError as e:
+            error_msg = 'Server disconnected error: {}'.format(e)
         else:
             error_msg = None
             break
@@ -50,8 +52,10 @@ def fetch(method, url, params=None, headers=None, cookies=None, data=None,
     if res.status > 200 or res.status < 200:
         logger.info('Request returned unexpected status: {} {}'
                     .format(res.status, res.reason))
-        raise exceptions.NetworkError('Request return unexpected status: {}: {}'
-                                      .format(res.status, res.reason))
+        raise exceptions.NetworkError(
+            'Request return unexpected status: {}: {}'
+            .format(res.status, res.reason)
+        )
     logger.info('Request successful')
     cookie_dict = {name: morsel.value for name, morsel in res.cookies.items()}
     return FetchResponse(res.status, body, cookie_dict)

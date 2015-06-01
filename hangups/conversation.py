@@ -45,7 +45,9 @@ class Conversation(object):
         if self.get_user(notif.user_id).is_self:
             logger.info('latest_read_timestamp for {} updated to {}'
                         .format(self.id_, notif.read_timestamp))
-            self_conversation_state = self._conversation.self_conversation_state
+            self_conversation_state = (
+                self._conversation.self_conversation_state
+            )
             self_conversation_state.self_read_state.latest_read_timestamp = (
                 parsers.to_timestamp(notif.read_timestamp)
             )
@@ -58,7 +60,9 @@ class Conversation(object):
         old_timestamp = self.latest_read_timestamp
         self._conversation = client_conversation
         if parsers.to_timestamp(self.latest_read_timestamp) == 0:
-            self_conversation_state = self._conversation.self_conversation_state
+            self_conversation_state = (
+                self._conversation.self_conversation_state
+            )
             self_conversation_state.self_read_state.latest_read_timestamp = (
                 parsers.to_timestamp(old_timestamp)
             )
@@ -154,6 +158,18 @@ class Conversation(object):
         Raises hangups.NetworkError if conversation cannot be renamed.
         """
         yield from self._client.setchatname(self.id_, name)
+
+    @asyncio.coroutine
+    def set_notification_level(self, level):
+        """Set the notification level of the conversation.
+
+        Pass schemas.ClientNotificationLevel.QUIET to disable notifications,
+        or schemas.ClientNotificationLevel.RING to enable them.
+
+        Raises hangups.NetworkError if the request fails.
+        """
+        yield from self._client.setconversationnotificationlevel(self.id_,
+                                                                 level)
 
     @asyncio.coroutine
     def set_typing(self, typing=schemas.TypingStatus.TYPING):
@@ -290,7 +306,7 @@ class Conversation(object):
     @property
     def latest_read_timestamp(self):
         """datetime timestamp of the last read ConversationEvent."""
-        timestamp = (self._conversation.self_conversation_state.\
+        timestamp = (self._conversation.self_conversation_state.
                      self_read_state.latest_read_timestamp)
         return parsers.from_timestamp(timestamp)
 
@@ -323,14 +339,14 @@ class Conversation(object):
     @property
     def is_quiet(self):
         """True if notification level for this conversation is quiet."""
-        return (self._conversation.self_conversation_state.notification_level
-                == schemas.ClientNotificationLevel.QUIET)
+        level = self._conversation.self_conversation_state.notification_level
+        return level == schemas.ClientNotificationLevel.QUIET
 
     @property
     def is_off_the_record(self):
         """True if conversation is off the record (history is disabled)."""
-        return (self._conversation.otr_status
-                == schemas.OffTheRecordStatus.OFF_THE_RECORD)
+        status = self._conversation.otr_status
+        return status == schemas.OffTheRecordStatus.OFF_THE_RECORD
 
 
 class ConversationList(object):
@@ -340,7 +356,7 @@ class ConversationList(object):
         self._client = client  # Client
         self._conv_dict = {}  # {conv_id: Conversation}
         self._sync_timestamp = sync_timestamp  # datetime
-        self._user_list = user_list # UserList
+        self._user_list = user_list  # UserList
 
         # Initialize the list of conversations from Client's list of
         # ClientConversationStates.
@@ -468,7 +484,9 @@ class ConversationList(object):
         """Sync conversation state and events that could have been missed."""
         logger.info('Syncing events since {}'.format(self._sync_timestamp))
         try:
-            res = yield from self._client.syncallnewevents(self._sync_timestamp)
+            res = yield from self._client.syncallnewevents(
+                self._sync_timestamp
+            )
         except exceptions.NetworkError as e:
             logger.warning('Failed to sync events, some events may be lost: {}'
                            .format(e))
